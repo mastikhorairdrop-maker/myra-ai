@@ -17,11 +17,8 @@ jobs:
 
       - name: Unzip and Build APK
         run: |
-          # ज़िप फाइल को ढूंढकर 'project' नाम के फोल्डर में अनजिप करेगा
-          unzip MYRA-AI-Stage1.zip -d extracted_project
+          unzip *.zip -d extracted_project
           cd extracted_project/*
-          
-          # Gradle को परमिशन देकर APK बनाएगा
           chmod +x gradlew
           ./gradlew assembleDebug
 
