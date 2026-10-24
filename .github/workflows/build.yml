@@ -1,0 +1,32 @@
+name: Build MYRA APK
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Unzip and Build APK
+        run: |
+          # ज़िप फाइल को ढूंढकर 'project' नाम के फोल्डर में अनजिप करेगा
+          unzip MYRA-AI-Stage1.zip -d extracted_project
+          cd extracted_project/*
+          
+          # Gradle को परमिशन देकर APK बनाएगा
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Save APK File
+        uses: actions/upload-artifact@v3
+        with:
+          name: myra-app-debug
+          path: extracted_project/**/build/outputs/apk/debug/*.apk
