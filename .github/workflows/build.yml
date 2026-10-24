@@ -15,10 +15,21 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Unzip and Build APK
+      - name: Unzip and Find Project
         run: |
-          unzip *.zip -d extracted_project
-          cd extracted_project/*
+          mkdir -p extracted_project
+          unzip -o *.zip -d extracted_project
+          
+          # यह कमांड अपने आप ढूंढ लेगी कि gradlew फाइल कहाँ है
+          GRADLEW_PATH=$(find extracted_project -name "gradlew" | head -n 1)
+          if [ -z "$GRADLEW_PATH" ]; then
+            echo "Error: gradlew file not found in zip!"
+            exit 1
+          fi
+          
+          PROJECT_DIR=$(dirname "$GRADLEW_PATH")
+          echo "Found project at: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
           chmod +x gradlew
           ./gradlew assembleDebug
 
@@ -26,4 +37,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: myra-app-debug
-          path: extracted_project/**/build/outputs/apk/debug/*.apk
+          path: "**/build/outputs/apk/debug/*.apk"
