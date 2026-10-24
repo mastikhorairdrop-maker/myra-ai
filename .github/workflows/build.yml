@@ -15,26 +15,23 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Unzip and Find Project
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Unzip and Build APK
         run: |
           mkdir -p extracted_project
           
-          # यह सिर्फ सबसे नई वाली ज़िप फाइल को चुनेगा
           LATEST_ZIP=$(ls -t *.zip | head -n 1)
           echo "Using zip file: $LATEST_ZIP"
           unzip -o "$LATEST_ZIP" -d extracted_project
           
-          GRADLEW_PATH=$(find extracted_project -name "gradlew" | head -n 1)
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "Error: gradlew file not found in zip!"
-            exit 1
-          fi
+          GRADLE_BUILD_PATH=$(find extracted_project -name "build.gradle*" | head -n 1)
+          PROJECT_DIR=$(dirname "$GRADLE_BUILD_PATH")
+          echo "Found project directory at: $PROJECT_DIR"
           
-          PROJECT_DIR=$(dirname "$GRADLEW_PATH")
-          echo "Found project at: $PROJECT_DIR"
           cd "$PROJECT_DIR"
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          gradle assembleDebug
 
       - name: Save APK File
         uses: actions/upload-artifact@v4
