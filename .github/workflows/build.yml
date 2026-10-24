@@ -1,4 +1,4 @@
-name: Build MYRA AI APK
+name: Build MAYA AI APK
 
 on:
   push:
