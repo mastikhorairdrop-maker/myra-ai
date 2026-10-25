@@ -22,8 +22,12 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Force Init and Build APK
+      - name: Clean Daemons and Build APK
         run: |
+          # पुराने फंसे हुए ग्रैडल डेमन को यहाँ पूरी तरह साफ़ कर रहे हैं
+          pkill -f java || true
+          rm -rf ~/.gradle/daemon/ || true
+
           export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
@@ -37,7 +41,7 @@ jobs:
           fi
 
           chmod +x gradlew || true
-          ./gradlew assembleDebug --no-daemon --stacktrace || gradle assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
