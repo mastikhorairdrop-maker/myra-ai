@@ -19,86 +19,74 @@ jobs:
 
       - name: Setup Android Project and Build APK
         run: |
+          python3 -c '
+          import os
+          if not os.path.exists("app") or not os.path.exists("settings.gradle"):
+              print("Creating minimal Android project...")
+              os.makedirs("app/src/main/java/com/myra/ai", exist_ok=True)
+              
+              with open("settings.gradle", "w") as f:
+                  f.write("rootProject.name = \"MYRA\"\ninclude \":app\"\n")
+                  
+              with open("build.gradle", "w") as f:
+                  f.write("""buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath "com.android.tools.build:gradle:8.2.0"
+                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20"
+              }
+          }
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          """)
+              
+              with open("app/build.gradle", "w") as f:
+                  f.write("""plugins {
+              id "com.android.application"
+          }
+          android {
+              namespace "com.myra.ai"
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.myra.ai"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+          }
+          """)
+              
+              with open("app/src/main/AndroidManifest.xml", "w") as f:
+                  f.write("""<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.myra.ai">
+              <application
+                  android:label="MYRA AI"
+                  android:theme="@android:style/Theme.NoTitleBar">
+                  <activity android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """)
+              
+              with open("app/src/main/java/com/myra/ai/MainActivity.kt", "w") as f:
+                  f.write("package com.myra.ai\nimport android.app.Activity\nimport android.os.Bundle\nclass MainActivity : Activity() {\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState)\n    }\n}\n")
+          '
+
           export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-
-          # अगर प्रोजेक्ट में 'app' फोल्डर या settings.gradle नहीं है, तो यह बेसिक एंड्रॉइड ढांचा खुद बना देगा
-          if [ ! -d "app" ] || [ ! -f "settings.gradle" ]; then
-            echo "Creating minimal Android project structure..."
-            mkdir -p app/src/main/java/com/myra/ai
-            
-            cat << 'EOF' > settings.gradle
-            rootProject.name = "MYRA"
-            include ':app'
-            EOF
-
-            cat << 'EOF' > build.gradle
-            buildscript {
-                repositories {
-                    google()
-                    mavenCentral()
-                }
-                dependencies {
-                    classpath "com.android.tools.build:gradle:8.2.0"
-                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20"
-                }
-            }
-            allprojects {
-                repositories {
-                    google()
-                    mavenCentral()
-                }
-            }
-            task clean(type: Delete) {
-                delete rootProject.buildDir
-            }
-            EOF
-
-            cat << 'EOF' > app/build.gradle
-            plugins {
-                id 'com.android.application'
-            }
-            android {
-                namespace 'com.myra.ai'
-                compileSdk 34
-                defaultConfig {
-                    applicationId "com.myra.ai"
-                    minSdk 24
-                    targetSdk 34
-                    versionCode 1
-                    versionName "1.0"
-                }
-            }
-            EOF
-
-            cat << 'EOF' > app/src/main/AndroidManifest.xml
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                package="com.myra.ai">
-                <application
-                    android:label="MYRA AI"
-                    android:theme="@android:style/Theme.NoTitleBar">
-                    <activity android:name=".MainActivity"
-                        android:exported="true">
-                        <intent-filter>
-                            <action android:name="android.intent.action.MAIN" />
-                            <category android:name="android.intent.category.LAUNCHER" />
-                        </intent-filter>
-                    </activity>
-                </application>
-            </manifest>
-            EOF
-
-            cat << 'EOF' > app/src/main/java/com/myra/ai/MainActivity.kt
-            package com.myra.ai
-            import android.app.Activity
-            import android.os.Bundle
-            class MainActivity : Activity() {
-                override fun onCreate(savedInstanceState: Bundle?) {
-                    super.onCreate(savedInstanceState)
-                }
-            }
-            EOF
-          fi
 
           if [ ! -f "gradlew" ]; then
             gradle wrapper --gradle-version 8.7
