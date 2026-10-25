@@ -27,10 +27,9 @@ jobs:
           export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
-          # अगर रूट फोल्डर में build.gradle नहीं है, तो यह बेसिक एंड्रॉइड ग्रैडल ढांचा खुद बना देगा
           if [ ! -f "build.gradle" ] && [ ! -f "build.gradle.kts" ]; then
             echo "Initializing basic gradle project structure..."
-            gradle init --type basic --dsl kotlin --test-framework none --project-name "MYRA" --overwrite
+            gradle init --type basic --dsl kotlin --test-framework none --project-name "MYRA"
           fi
 
           if [ ! -f "gradlew" ]; then
@@ -38,8 +37,6 @@ jobs:
           fi
 
           chmod +x gradlew || true
-          
-          # अगर सीधे assembleDebug न चले, तो प्रोजेक्ट को कंपाइल करने का प्रयास करेगा
           ./gradlew assembleDebug --no-daemon --stacktrace || gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
