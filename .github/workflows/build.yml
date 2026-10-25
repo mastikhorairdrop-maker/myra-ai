@@ -17,23 +17,87 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.7'
-
-      - name: Clean Daemons and Build APK
+      - name: Setup Android Project and Build APK
         run: |
-          # पुराने फंसे हुए ग्रैडल डेमन को यहाँ पूरी तरह साफ़ कर रहे हैं
-          pkill -f java || true
-          rm -rf ~/.gradle/daemon/ || true
-
           export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
-          if [ ! -f "build.gradle" ] && [ ! -f "build.gradle.kts" ]; then
-            echo "Initializing basic gradle project structure..."
-            gradle init --type basic --dsl kotlin --test-framework none --project-name "MYRA"
+          # अगर प्रोजेक्ट में 'app' फोल्डर या settings.gradle नहीं है, तो यह बेसिक एंड्रॉइड ढांचा खुद बना देगा
+          if [ ! -d "app" ] || [ ! -f "settings.gradle" ]; then
+            echo "Creating minimal Android project structure..."
+            mkdir -p app/src/main/java/com/myra/ai
+            
+            cat << 'EOF' > settings.gradle
+            rootProject.name = "MYRA"
+            include ':app'
+            EOF
+
+            cat << 'EOF' > build.gradle
+            buildscript {
+                repositories {
+                    google()
+                    mavenCentral()
+                }
+                dependencies {
+                    classpath "com.android.tools.build:gradle:8.2.0"
+                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20"
+                }
+            }
+            allprojects {
+                repositories {
+                    google()
+                    mavenCentral()
+                }
+            }
+            task clean(type: Delete) {
+                delete rootProject.buildDir
+            }
+            EOF
+
+            cat << 'EOF' > app/build.gradle
+            plugins {
+                id 'com.android.application'
+            }
+            android {
+                namespace 'com.myra.ai'
+                compileSdk 34
+                defaultConfig {
+                    applicationId "com.myra.ai"
+                    minSdk 24
+                    targetSdk 34
+                    versionCode 1
+                    versionName "1.0"
+                }
+            }
+            EOF
+
+            cat << 'EOF' > app/src/main/AndroidManifest.xml
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                package="com.myra.ai">
+                <application
+                    android:label="MYRA AI"
+                    android:theme="@android:style/Theme.NoTitleBar">
+                    <activity android:name=".MainActivity"
+                        android:exported="true">
+                        <intent-filter>
+                            <action android:name="android.intent.action.MAIN" />
+                            <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+            EOF
+
+            cat << 'EOF' > app/src/main/java/com/myra/ai/MainActivity.kt
+            package com.myra.ai
+            import android.app.Activity
+            import android.os.Bundle
+            class MainActivity : Activity() {
+                override fun onCreate(savedInstanceState: Bundle?) {
+                    super.onCreate(savedInstanceState)
+                }
+            }
+            EOF
           fi
 
           if [ ! -f "gradlew" ]; then
@@ -47,7 +111,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: myra-debug-apk
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            build/outputs/apk/debug/*.apk
-            **/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk
