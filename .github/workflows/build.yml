@@ -11,6 +11,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Locate project folder
+        id: loc
+        run: |
+          FILE=$(find . -maxdepth 3 -name settings.gradle.kts | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "settings.gradle.kts not found."
+            exit 1
+          fi
+          echo "dir=$(dirname "$FILE")" >> "$GITHUB_OUTPUT"
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -23,6 +33,7 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build Debug APK
+        working-directory: ${{ steps.loc.outputs.dir }}
         run: |
           export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
@@ -33,4 +44,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: myra-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: ${{ steps.loc.outputs.dir }}/app/build/outputs/apk/debug/*.apk
